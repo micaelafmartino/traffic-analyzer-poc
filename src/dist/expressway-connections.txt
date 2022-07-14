@@ -1,0 +1,7 @@
+TrafficMeasurement(L,25,30.539740081452827,J,13)
+TrafficMeasurement(J,13,44.967016698798425,C,11)
+TrafficMeasurement(C,11,44.5036280992395,A,1)
+TrafficMeasurement(A,1,41.93302498783406,T,1)
+TrafficMeasurement(T,1,55.16633735891448,T,30)
+TrafficMeasurement(T,30,30.26847503893581,A,30)
+TrafficMeasurement(A,30,30.27880670164318,A,1)
