@@ -1,89 +1,45 @@
 package co.topl.traffic
 
 import co.topl.traffic.analyzer.TrafficAnalyzer
-import co.topl.traffic.analyzer.TrafficAnalyzer.LeadingSegments
-import co.topl.traffic.model.cityNetwork.{Intersection, RoadSegment}
-import co.topl.traffic.model.json.{TrafficMeasurement, TrafficMeasurements}
-import co.topl.traffic.utils.extensions.JsValueExtensions
+import co.topl.traffic.model.cityNetwork.Intersection
+import co.topl.traffic.model.json.{BestPath, TrafficMeasurement}
+import co.topl.traffic.parser.TrafficMeasurementsParser
+import play.api.libs.json.Json
+import zio.Console._
+import zio._
 
-//import zio.Console._
-//import zio._
+import java.net.URL
+import scala.util.Try
 
-//object Main extends ZIOAppDefault {
-//  lazy val run = for {
-//    _ <- printLine("Hello! What is your name?")
-//    name <- readLine
-//    _ <- printLine(s"Hello, $name, welcome to ZIO!")
-//  } yield ()
-//}
+object Main extends ZIOAppDefault {
+  private val intersectionParser = """([a-zA-Z]+)(\d+)""".r
 
-object Main extends App {
-  val url = """file:src/dist/sample-data.json"""
-  val measurements: List[TrafficMeasurement] = TrafficMeasurements.readMeasurements(url).get.trafficMeasurements.head.measurements
-  val segments = measurements.map(_.segment)
-  val json = TrafficMeasurements.readMeasurementsJson(url).get.prettyString()
-  val adjacencies: Map[Intersection, List[RoadSegment]] = segments.groupBy(_.start)
+  lazy val run = for {
+    _ <- printLine("Enter the path to the measurements file (URL format):")
+    url <- readLine
+    _ <- printLine("Enter the source intersection (in the format <avenue><street>, e.g. A1):")
+    source <- readLine
+    _ <- printLine("Enter the target intersection (in the format <avenue><street>, e.g. F10):")
+    target <- readLine
+    _ <- printLine(Json.toJson(getBestRoute(url, source, target).get).toString())
+  } yield ()
 
-  val intersections: Set[Intersection] = segments.flatMap(m => List(m.start, m.end)).toSet
-  val leadingSegments: LeadingSegments = segments.groupBy(_.end)
+  private def getBestRoute(url: String, source: String, target: String): Try[BestPath] = for {
+    (url, source, target) <- Try {
+      val intersectionParser(sourceAvenue, sourceStreet) = source
+      val intersectionParser(targetAvenue, targetStreet) = target
+      new URL(url) // url validation
+      (url, Intersection(avenue = sourceAvenue, street = sourceStreet), Intersection(avenue = targetAvenue, street = targetStreet))
+    }
+    allMeasurements <- TrafficMeasurementsParser(url).readMeasurements()
+    averagedSegments = allMeasurements
+      .trafficMeasurements
+      .flatMap(_.measurements)
+      .groupBy(_.segment)
+      .map { case (segment, measurements) => segment.copy(transitTime = avgTransitTime(measurements)) }
+      .toList
+    (totalTransitTime, path) = TrafficAnalyzer.from(averagedSegments, target).shortestPathFrom(source)
+  } yield BestPath(source = source.toString, target = target.toString, totalTransitTime = totalTransitTime, path = path.dropRight(1).map(_.toString))
 
-  println(TrafficAnalyzer(leadingSegments, intersections.last).shortestPathFrom(intersections.head))
-  println()
-  TrafficAnalyzer(leadingSegments, intersections.last).shortestPaths().pathToTarget.foreach(println)
-
-  println()
-  println("total intersections: " + intersections.size)
-  println("with 3 or more possible paths: " + adjacencies.count(_._2.size > 2))
-  println("with only 1 possible path: " + adjacencies.count(_._2.size == 1))
-  println("with 2 possible paths: " + adjacencies.count(_._2.size == 2))
-  //  adjacencies.mapValues(_.size).filter(_._2 < -1).foreach(println)
-}
-
-/** DOT file generator to plot the graph using Graphviz */
-object GraphvizGenerator extends App {
-  val url = """file:src/dist/sample-data.json"""
-  val segments: List[RoadSegment] = TrafficMeasurements
-    .readMeasurements(url).get
-    .trafficMeasurements.head
-    .measurements
-    .map(_.segment)
-
-  val intersections = segments.flatMap(m => List(m.start, m.end)).toSet
-
-  val intersectionsMatrix: List[List[Intersection]] = intersections
-    .groupBy(_.street.toInt)
-    .view.mapValues(_.toList.sortBy(_.avenue))
-    .toList.sortBy(_._1)
-    .map(_._2)
-
-  val horizontalGrid = intersectionsMatrix
-    .map(_.mkString("rank=same {", " -> ", "}"))
-    .mkString("\n")
-
-  val verticalGrid = intersectionsMatrix
-    .transpose
-    .map(_.mkString(" -> "))
-    .mkString("\n")
-
-  val edges: String = segments
-    .map(s => s""""${s.start}" -> "${s.end}" [label = "${s.transitTime.round}"]""")
-    .mkString("\n")
-
-  val graphvizCode =
-    s"""
-       |digraph {
-       |node [shape = plaintext]
-       |splines = false
-       |
-       |$edges
-       |
-       |edge [style=invis]
-       |
-       |$verticalGrid
-       |
-       |$horizontalGrid
-       |}
-       |""".stripMargin
-
-  println(graphvizCode)
+  private def avgTransitTime(measurements: List[TrafficMeasurement]): Double = measurements.map(_.transitTime).sum / measurements.size.toDouble
 }

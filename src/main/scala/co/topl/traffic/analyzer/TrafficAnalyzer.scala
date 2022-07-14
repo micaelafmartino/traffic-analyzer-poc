@@ -3,6 +3,8 @@ package co.topl.traffic.analyzer
 import co.topl.traffic.analyzer.TrafficAnalyzer._
 import co.topl.traffic.model.cityNetwork.{Intersection, RoadSegment}
 
+import scala.annotation.tailrec
+
 /** Looks up the shortest path to any intersection of the City's network using Dijkstra's shortest path algorithm
  *
  * @param leadingSegments [[Map]] with the leading segments to each existing intersection
@@ -14,12 +16,17 @@ case class TrafficAnalyzer(leadingSegments: LeadingSegments,
                            target: Intersection,
                            current: Intersection,
                            pathToTarget: Map[Intersection, PathToTarget]) {
-  def shortestPaths(): TrafficAnalyzer = if (leadingSegments.keySet == pathToTarget.filter(_._2.alreadyShortest).keySet) this else selectNext().shortestPaths()
+  /** Shortest path from every intersection to [[target]] */
+  def shortestPaths(): TrafficAnalyzer = run(ta => ta.leadingSegments.keySet == ta.pathToTarget.filter(_._2.alreadyShortest).keySet)
 
-  def shortestPathFrom(source: Intersection): (Intersection, Intersection, Double, Path) = pathToTarget
-    .get(source)
-    .filter(_.alreadyShortest)
-    .fold(selectNext().shortestPathFrom(source))(path => (source, target, path.totalTransitTime, path.segments))
+  /** Shortest path from the given source intersection to [[target]] */
+  def shortestPathFrom(source: Intersection): (Double, Path) = {
+    val path = run(_.pathToTarget.get(source).exists(_.alreadyShortest)).pathToTarget(source)
+    (path.totalTransitTime, path.segments)
+  }
+
+  @tailrec
+  private def run(exitCondition: TrafficAnalyzer => Boolean): TrafficAnalyzer = if (exitCondition(this)) this else selectNext().run(exitCondition)
 
   /** Marks [[current]] as visited and selects a new [[current]] intersection */
   private def selectNext(): TrafficAnalyzer = copy(
@@ -38,11 +45,13 @@ case class TrafficAnalyzer(leadingSegments: LeadingSegments,
 }
 
 object TrafficAnalyzer {
+  /** Ordered sequence of road segments to travel from one intersection to another */
+  type Path = List[RoadSegment]
+
   /** [[Map]] with the leading segments to each existing intersection */
   type LeadingSegments = Map[Intersection, Path]
 
-  /** Ordered sequence of road segments to travel from one intersection to another */
-  type Path = List[RoadSegment]
+  def from(segments: List[RoadSegment], target: Intersection): TrafficAnalyzer = TrafficAnalyzer(segments.groupBy(_.end), target)
 
   def apply(leadingSegments: LeadingSegments, target: Intersection): TrafficAnalyzer = new TrafficAnalyzer(
     leadingSegments = leadingSegments,
