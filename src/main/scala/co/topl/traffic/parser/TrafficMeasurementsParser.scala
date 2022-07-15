@@ -17,13 +17,13 @@ case class TrafficMeasurementsParser(url: String) {
   def readMeasurements(): Try[TrafficMeasurements] = readMeasurementsJson().flatMap(_.asTry[TrafficMeasurements])
 
   /** Takes all measurements from [[readMeasurements]] and returns each [[RoadSegment]] with the average transit time between all measurements */
-  def roadSegments(): Try[List[RoadSegment]] = readMeasurements().map(_
+  def roadSegments(): Try[Set[RoadSegment]] = readMeasurements().map(_
     .trafficMeasurements
     .flatMap(_.measurements)
-    .groupBy(_.segment)
-    .map { case (segment, measurements) => segment.copy(transitTime = avgTransitTime(measurements)) }
-    .toList
+    .groupBy(_.segment.withoutTime)
+    .map { case ((start, end), measurements) => RoadSegment(avgTransitTime(measurements), start, end) }
+    .toSet
   )
 
-  def avgTransitTime(measurements: List[TrafficMeasurement]): Double = measurements.map(_.transitTime).sum / measurements.size.toDouble
+  private[parser] def avgTransitTime(measurements: List[TrafficMeasurement]): Double = measurements.map(_.transitTime).sum / measurements.size.toDouble
 }

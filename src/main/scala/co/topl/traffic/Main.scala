@@ -57,7 +57,7 @@ object Main extends ZIOAppDefault {
     else ZIO.fromTry(Try(new URL(url).toString)).mapError(UserInputParseError("url", url, _))
   }
 
-  def parseRoadSegments(url: String): IO[TrafficDataParseError, List[RoadSegment]] = ZIO
+  def parseRoadSegments(url: String): IO[TrafficDataParseError, Set[RoadSegment]] = ZIO
     .attemptBlocking(TrafficMeasurementsParser(url).roadSegments())
     .flatMap(ZIO.fromTry(_))
     .mapError(TrafficDataParseError)

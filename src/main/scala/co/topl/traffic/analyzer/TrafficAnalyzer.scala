@@ -55,7 +55,7 @@ object TrafficAnalyzer {
   /** [[Map]] with the leading segments to each existing intersection */
   type LeadingSegments = Map[Intersection, Path]
 
-  def from(segments: List[RoadSegment], target: Intersection): Try[TrafficAnalyzer] = TrafficAnalyzer(segments.groupBy(_.end), target)
+  def from(segments: Set[RoadSegment], target: Intersection): Try[TrafficAnalyzer] = TrafficAnalyzer(segments.toList.groupBy(_.end), target)
 
   def apply(leadingSegments: LeadingSegments, target: Intersection): Try[TrafficAnalyzer] = TrafficAnalyzer(
     leadingSegments = leadingSegments,

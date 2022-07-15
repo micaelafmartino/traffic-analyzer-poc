@@ -6,15 +6,10 @@ import co.topl.traffic.parser.TrafficMeasurementsParser
 /** DOT file generator to plot the graph using Graphviz */
 object GraphvizGenerator extends App {
   val url = """file:src/dist/sample-data.json"""
-  val segments: List[RoadSegment] = TrafficMeasurementsParser(url)
-    .readMeasurements().get
-    .trafficMeasurements.head
-    .measurements
-    .map(_.segment)
+  val segments: Set[RoadSegment] = TrafficMeasurementsParser(url).roadSegments().get
 
-  val intersections = segments.flatMap(m => List(m.start, m.end)).toSet
-
-  val intersectionsMatrix: List[List[Intersection]] = intersections
+  val intersectionsMatrix: List[List[Intersection]] = segments
+    .flatMap(m => List(m.start, m.end))
     .groupBy(_.street.toInt)
     .view.mapValues(_.toList.sortBy(_.avenue))
     .toList.sortBy(_._1)

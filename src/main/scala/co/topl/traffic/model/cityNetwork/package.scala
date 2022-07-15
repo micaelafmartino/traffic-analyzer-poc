@@ -13,6 +13,8 @@ package object cityNetwork {
 
   /** One-way segment of the road bewteen two intersections with the time it takes to traverse it */
   case class RoadSegment(transitTime: Double, start: Intersection, end: Intersection) {
+    lazy val withoutTime: (Intersection, Intersection) = (start, end)
+
     override def toString: String = s"$start -> $end"
   }
 }
