@@ -6,6 +6,10 @@ package object cityNetwork {
     override def toString: String = s"$avenue$street"
   }
 
+  object Intersection {
+    def apply(avenue: String, street: String): Intersection = new Intersection(avenue.toUpperCase, street)
+  }
+
   /** One-way segment of the road bewteen two intersections with the time it takes to traverse it */
   case class RoadSegment(transitTime: Double, start: Intersection, end: Intersection) {
     override def toString: String = s"$start -> $end"
