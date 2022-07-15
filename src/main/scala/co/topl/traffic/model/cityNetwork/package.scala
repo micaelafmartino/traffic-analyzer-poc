@@ -7,6 +7,7 @@ package object cityNetwork {
   }
 
   object Intersection {
+    // streets should be always numbers, so for now no reason to uppercase them
     def apply(avenue: String, street: String): Intersection = new Intersection(avenue.toUpperCase, street)
   }
 
