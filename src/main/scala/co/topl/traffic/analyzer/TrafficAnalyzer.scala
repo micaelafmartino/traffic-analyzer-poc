@@ -65,8 +65,8 @@ object TrafficAnalyzer {
   )
 
   def apply(leadingSegments: LeadingSegments, target: Intersection, current: Intersection, pathToTarget: Map[Intersection, PathToTarget]): Try[TrafficAnalyzer] = Try {
-    if (!leadingSegments.contains(target)) throw TrafficAnalyzerInitError(s"Target $target is unreacheable (no segment road leads to it)")
-    if (!leadingSegments.contains(current)) throw TrafficAnalyzerInitError(s"Invalid state: there must always be an already calculated path from current $current to target $target")
+    if (!leadingSegments.get(target).exists(_.nonEmpty)) throw TrafficAnalyzerInitError(s"Target $target is unreacheable (no segment road leads to it)")
+    if (!pathToTarget.contains(current)) throw TrafficAnalyzerInitError(s"Invalid state: there must always be an already calculated path from current $current to target $target")
     if (!pathToTarget.get(target).exists(_.alreadyShortest)) throw TrafficAnalyzerInitError(s"Self path from/to target $target not present in pathToTarget (PathToTarget([$target -> $target], alreadyShortest = true))")
 
     new TrafficAnalyzer(leadingSegments, target, current, pathToTarget)
