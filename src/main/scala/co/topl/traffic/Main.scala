@@ -14,7 +14,6 @@ import java.net.URL
 import scala.util.Try
 
 object Main extends ZIOAppDefault {
-  private val intersectionParser = """([a-zA-Z]+)(\d+)""".r
   private val defaultSampleFileUrl = "file:src/dist/sample-data.json"
 
   def run = shellProgram
@@ -48,7 +47,7 @@ object Main extends ZIOAppDefault {
   } yield quitOrRepeat
 
   def parseInputIntersection(stringIntersection: String): IO[UserInputParseError, Intersection] = ZIO.fromTry(Try {
-    val intersectionParser(sourceAvenue, sourceStreet) = stringIntersection
+    val Intersection.parser(sourceAvenue, sourceStreet) = stringIntersection
     Intersection(avenue = sourceAvenue, street = sourceStreet)
   }).mapError(UserInputParseError("intersection", stringIntersection, _))
 
@@ -67,7 +66,7 @@ object Main extends ZIOAppDefault {
       source = source.toString,
       target = analyzer.target.toString,
       totalTransitTime = totalTransitTime,
-      path = path.dropRight(1).map(_.toString) // the last segment is the self path from target to target with 0 transit time
+      path = path.dropRight(1).map(_.toStringWithoutTime) // the last segment is the self path from target to target with 0 transit time
     )
   }
 

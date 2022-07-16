@@ -1,32 +1,33 @@
 package co.topl.traffic.model.cityNetwork
 
+import co.topl.traffic.model.cityNetwork.Intersection.IntersectionInterpolator
 import org.scalatest.featurespec.AsyncFeatureSpec
 import org.scalatest.matchers.should.Matchers
 
 class CityNetworkSpec extends AsyncFeatureSpec with Matchers {
   Feature("construction") {
     Scenario("Intersection's avenues are always uppercase") {
-      Intersection(avenue = "A", street = "1").avenue shouldBe "A"
-      Intersection(avenue = "a", street = "1").avenue shouldBe "A"
+      i"A1".avenue shouldBe "A"
+      i"a1".avenue shouldBe "A"
     }
   }
 
   Feature("toString") {
     Scenario("Intesection") {
-      Intersection(avenue = "A", street = "1").toString shouldBe "A1"
-      Intersection(avenue = "d", street = "22").toString shouldBe "D22"
+      i"A1".toString shouldBe "A1"
+      i"d22".toString shouldBe "D22"
     }
 
     Scenario("RoadSegment") {
-      RoadSegment(0, Intersection("A", "1"), Intersection("A", "2")).toString shouldBe "A1 -> A2"
-      RoadSegment(0, Intersection("b", "23"), Intersection("k", "15")).toString shouldBe "B23 -> K15"
+      (i"A1" ~> i"A2" in 0.123).toString shouldBe "A1 ~> A2 in 0.123"
+      (i"b23" ~> i"k15" in 64.8).toString shouldBe "B23 ~> K15 in 64.8"
     }
   }
 
   Feature("withoutTime") {
     Scenario("returns a tuple with the starting intersection and the ending one") {
-      RoadSegment(0, Intersection("A", "1"), Intersection("A", "2")).withoutTime shouldBe(Intersection("A", "1"), Intersection("A", "2"))
-      RoadSegment(0, Intersection("b", "23"), Intersection("k", "15")).withoutTime shouldBe(Intersection("b", "23"), Intersection("k", "15"))
+      (i"A1" ~> i"A2" in 0).withoutTime shouldBe(i"A1", i"A2")
+      (i"b23" ~> i"k15" in 0).withoutTime shouldBe(i"b23", i"k15")
     }
   }
 }

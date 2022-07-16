@@ -1,7 +1,7 @@
 package co.topl.traffic.parser
 
 import co.topl.traffic.Fixture
-import co.topl.traffic.model.cityNetwork.{Intersection, RoadSegment}
+import co.topl.traffic.model.cityNetwork.Intersection.IntersectionInterpolator
 import co.topl.traffic.model.json.TrafficMeasurement
 import org.scalatest.TryValues._
 import org.scalatest.featurespec.AsyncFeatureSpec
@@ -58,11 +58,7 @@ class TrafficMeasurementsParserSpec extends AsyncFeatureSpec with Matchers with 
       val segments = TrafficMeasurementsParser(tempFile(sampleJson)).roadSegments().success.value
 
       // round for easy comparison
-      segments.map(s => s.copy(transitTime = s.transitTime.round)) shouldBe Set(
-        RoadSegment(28, Intersection("A", "1"), Intersection("B", "1")),
-        RoadSegment(58, Intersection("A", "2"), Intersection("A", "1")),
-        RoadSegment(48, Intersection("A", "2"), Intersection("B", "2"))
-      )
+      segments.map(s => s.copy(transitTime = s.transitTime.round)) shouldBe Set(i"A1" ~> i"B1" in 28, i"A2" ~> i"A1" in 58, i"A2" ~> i"B2" in 48)
     }
   }
 

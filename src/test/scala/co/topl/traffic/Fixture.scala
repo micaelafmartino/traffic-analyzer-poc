@@ -1,6 +1,7 @@
 package co.topl.traffic
 
 import co.topl.traffic.analyzer.TrafficAnalyzer
+import co.topl.traffic.model.cityNetwork.Intersection.IntersectionInterpolator
 import co.topl.traffic.model.cityNetwork.{Intersection, RoadSegment}
 import co.topl.traffic.model.json.{TimedMeasurements, TrafficMeasurement, TrafficMeasurements}
 import play.api.libs.json.{Json, Writes}
@@ -60,36 +61,27 @@ trait Fixture {
     )),
   ))
 
-  object intersections {
-    val A1 = Intersection("A", "1")
-    val A2 = Intersection("A", "2")
-    val A3 = Intersection("A", "3")
-    val B1 = Intersection("B", "1")
-    val B2 = Intersection("B", "2")
-    val B3 = Intersection("B", "3")
-    val allintersections = Set(A1, A2, A3, B1, B2, B3)
-  }
-  import intersections._
+  val intersections = Set(i"A1", i"A2", i"A3", i"B1", i"B2", i"B3")
 
-  lazy val target: Intersection = B2
+  val target: Intersection = i"B2"
 
-  lazy val segments: Set[RoadSegment] = Set(
-    RoadSegment(1, B1, A1),
-    RoadSegment(2, A1, A2),
-    RoadSegment(3, A2, A3),
-    RoadSegment(5, A3, B3),
-    RoadSegment(6.1, B3, B2),
-    RoadSegment(4, A2, B2),
-    RoadSegment(7, B2, B1),
+  val segments: Set[RoadSegment] = Set(
+    i"B1" ~> i"A1" in 1,
+    i"A1" ~> i"A2" in 2,
+    i"A2" ~> i"A3" in 3,
+    i"A3" ~> i"B3" in 5,
+    i"B3" ~> i"B2" in 6.1,
+    i"A2" ~> i"B2" in 4,
+    i"B2" ~> i"B1" in 7,
   )
 
   lazy val leadingSegments: Map[Intersection, List[RoadSegment]] = Map(
-    A1 -> List(RoadSegment(1, B1, A1)),
-    A2 -> List(RoadSegment(2, A1, A2)),
-    A3 -> List(RoadSegment(3, A2, A3)),
-    B1 -> List(RoadSegment(7, B2, B1)),
-    B2 -> List(RoadSegment(4, A2, B2), RoadSegment(6.1, B3, B2)),
-    B3 -> List(RoadSegment(5, A3, B3)),
+    i"A1" -> List(i"B1" ~> i"A1" in 1),
+    i"A2" -> List(i"A1" ~> i"A2" in 2),
+    i"A3" -> List(i"A2" ~> i"A3" in 3),
+    i"B1" -> List(i"B2" ~> i"B1" in 7),
+    i"B2" -> List(i"A2" ~> i"B2" in 4, i"B3" ~> i"B2" in 6.1),
+    i"B3" -> List(i"A3" ~> i"B3" in 5),
   )
 
   lazy val analyzer: TrafficAnalyzer = TrafficAnalyzer.from(segments, target).get
