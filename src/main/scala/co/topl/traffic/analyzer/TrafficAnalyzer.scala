@@ -25,24 +25,25 @@ case class TrafficAnalyzer(leadingSegments: LeadingSegments,
   def shortestPaths(): TrafficAnalyzer = run(_.complete)
 
   /** Shortest path from the given source intersection to [[target]]. None means the target intersection is unreacheable from source */
-  def shortestPathFrom(source: Intersection): Option[(Double, Path)] = run(_.pathToTarget.get(source).exists(_.alreadyShortest))
-    .pathToTarget.get(source)
-    .map(path => (path.totalTransitTime, path.segments))
+  def shortestPathFrom(source: Intersection): Option[(Double, Path)] = _shortestPathFrom(source).pathToTarget.get(source).map(path => (path.totalTransitTime, path.segments))
+
+  /** Just here for testing purposes */
+  private[analyzer] def _shortestPathFrom(source: Intersection): TrafficAnalyzer = run(_.current == source)
 
   @tailrec // for this to be tailrec we cannot map+getOrElse/fold over newCurrent, so isEmpty+get it is..
-  private def run(exitCondition: TrafficAnalyzer => Boolean): TrafficAnalyzer = if (exitCondition(this) || newCurrent.isEmpty) this else selectNewCurrent(newCurrent.get).run(exitCondition)
+  private def run(exitCondition: TrafficAnalyzer => Boolean): TrafficAnalyzer = if (exitCondition(this) || nextCurrent.isEmpty) this else selectNewCurrent(nextCurrent.get).run(exitCondition)
 
   /** Marks [[current]] as visited and selects a new [[current]] intersection */
-  private def selectNewCurrent(newCurrent: Intersection): TrafficAnalyzer = copy(
+  private[analyzer] def selectNewCurrent(newCurrent: Intersection): TrafficAnalyzer = copy(
     current = newCurrent,
-    pathToTarget = updatedPathsViaCurrent.updatedWith(current)(_.map(_.copy(alreadyShortest = true)))
+    pathToTarget = updatedPathsViaCurrent.updatedWith(newCurrent)(_.map(_.copy(alreadyShortest = true)))
   )
 
   /** Non-visited (aka shortest path not found yet) intersection with the shortest distance to the target so far. None means there is no other intersection to analyze */
-  private lazy val newCurrent: Option[Intersection] = updatedPathsViaCurrent.filterNot(_._2.alreadyShortest).minByOption(_._2.totalTransitTime).map(_._1)
+  private[analyzer] lazy val nextCurrent: Option[Intersection] = updatedPathsViaCurrent.filterNot(_._2.alreadyShortest).minByOption(_._2.totalTransitTime).map(_._1)
 
   /** Updated [[pathToTarget]] with new/better paths to the target via the current intersection from all it's leading segments */
-  private lazy val updatedPathsViaCurrent: Map[Intersection, PathToTarget] = leadingSegments(current).foldLeft(pathToTarget) { (pathToTarget, leadingSegment) =>
+  private[analyzer] lazy val updatedPathsViaCurrent: Map[Intersection, PathToTarget] = leadingSegments(current).foldLeft(pathToTarget) { (pathToTarget, leadingSegment) =>
     val pathViaCurrent = leadingSegment >>: pathToTarget(current)
     pathToTarget.updatedWith(leadingSegment.start)(_.orElse(Some(pathViaCurrent)).map(_ shortest pathViaCurrent))
   }
