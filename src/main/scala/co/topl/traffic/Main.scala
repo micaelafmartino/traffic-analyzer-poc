@@ -14,7 +14,7 @@ import java.net.URL
 import scala.util.Try
 
 object Main extends ZIOAppDefault {
-  private val defaultSampleFileUrl = "file:src/dist/sample-data.json"
+  private val defaultSampleFileUrl = "file:dist/sample-data.json"
 
   def run = shellProgram
     .repeatUntilEquals("q")
@@ -66,7 +66,7 @@ object Main extends ZIOAppDefault {
       source = source.toString,
       target = analyzer.target.toString,
       totalTransitTime = totalTransitTime,
-      path = path.dropRight(1).map(_.toStringWithoutTime) // the last segment is the self path from target to target with 0 transit time
+      path = path.dropRight(1).map(_.unmeasured.toString) // the last segment is the self path from target to target with 0 transit time
     )
   }
 

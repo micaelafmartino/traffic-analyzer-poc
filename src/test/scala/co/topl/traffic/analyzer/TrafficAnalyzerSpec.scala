@@ -212,11 +212,11 @@ class TrafficAnalyzerSpec extends AsyncFeatureSpec with Matchers with Fixture {
   // TODO: It shouldn't be here with the unit tests, move
   Feature("Integration Test") {
     Scenario("Shortest path between C11 -> K14") {
-      val segments: Set[RoadSegment] = TrafficMeasurementsParser("file:src/dist/sample-data.json").roadSegments().success.value
+      val segments: Set[RoadSegment] = TrafficMeasurementsParser("file:dist/sample-data.json").roadSegments().success.value
 
-      // pretty similar paths, time difference is too close to guess manually so we try the four of them
+      // pretty similar paths, time difference is too close to guess manually so we try the four of them to check we actually expect the shortest one
       val possiblePaths: Seq[Seq[Intersection]] = Seq(
-        Seq(i"C11", i"D11", i"E11", i"F11", i"F12", i"F13", i"F14", i"F15", i"G15", i"H15", i"I15", i"J15", i"K15", i"K14"),
+        Seq(i"C11", i"D11", i"E11", i"F11", i"F12", i"F13", i"F14", i"F15", i"G15", i"H15", i"I15", i"J15", i"K15", i"K14"), // this one should be the shortest
         Seq(i"C11", i"D11", i"E11", i"F11", i"G11", i"G12", i"G13", i"G14", i"G15", i"H15", i"I15", i"J15", i"K15", i"K14"),
         Seq(i"C11", i"D11", i"E11", i"F11", i"G11", i"H11", i"H12", i"H13", i"H14", i"H15", i"I15", i"J15", i"K15", i"K14"),
         Seq(i"C11", i"D11", i"E11", i"F11", i"G11", i"H11", i"I11", i"I12", i"I13", i"I14", i"I15", i"J15", i"K15", i"K14")
@@ -224,7 +224,7 @@ class TrafficAnalyzerSpec extends AsyncFeatureSpec with Matchers with Fixture {
 
       // transform to Path with the total transit time
       val possiblePathsWithTime: Seq[(Path, Double)] = possiblePaths.map {
-        case h1 :: h2 :: t => t.scanLeft(h1 -> h2)(_._2 -> _).map(swt => segments.find(_.withoutTime == swt).value)
+        case i1 :: i2 :: is => is.scanLeft(i1 ~> i2)(_.end ~> _).map(unmeasured => segments.find(_.unmeasured == unmeasured).value)
       }.map(path => path -> path.map(_.transitTime).sum)
 
       val expectedPath = List(
@@ -243,8 +243,6 @@ class TrafficAnalyzerSpec extends AsyncFeatureSpec with Matchers with Fixture {
         i"K15" ~> i"K14" in 17.056061491788984,
         i"K14" ~> i"K14" in 0,
       )
-
-      println(expectedPath)
 
       possiblePathsWithTime.minBy(_._2)._1 shouldBe expectedPath.dropRight(1) // check the calculated min path is the same we believe it is
       TrafficAnalyzer.from(segments, i"K14").success.value.shortestPathFrom(i"C11") shouldBe Some(452.23544568070736, expectedPath)

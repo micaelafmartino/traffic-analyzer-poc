@@ -24,10 +24,10 @@ class CityNetworkSpec extends AsyncFeatureSpec with Matchers {
     }
   }
 
-  Feature("withoutTime") {
-    Scenario("returns a tuple with the starting intersection and the ending one") {
-      (i"A1" ~> i"A2" in 0).withoutTime shouldBe(i"A1", i"A2")
-      (i"b23" ~> i"k15" in 0).withoutTime shouldBe(i"b23", i"k15")
+  Feature("unmeasured") {
+    Scenario("returns the same segment without time") {
+      (i"A1" ~> i"A2" in 0).unmeasured shouldBe UnmeasuredRoadSegment(i"A1", i"A2")
+      (i"b23" ~> i"k15" in 0).unmeasured shouldBe UnmeasuredRoadSegment(i"b23", i"k15")
     }
   }
 }

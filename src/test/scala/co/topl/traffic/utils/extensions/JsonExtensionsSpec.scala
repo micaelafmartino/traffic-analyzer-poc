@@ -12,6 +12,7 @@ class JsonExtensionsSpec extends AsyncFeatureSpec with Matchers {
       JsObject(Seq("a" -> JsNumber(1), "b" -> JsNumber(2))).asTry[Test] shouldBe Success(Test(1, 2))
       JsObject.empty.asTry[TestOption] shouldBe Success(TestOption(None, None))
     }
+
     Scenario("invalid") {
       assert(JsObject(Seq("a" -> JsNumber(1), "b" -> JsNumber(2))).asTry[Test2].isFailure)
       assert(JsObject(Seq("a" -> JsNumber(1), "b" -> JsString("2"))).asTry[Test].isFailure)

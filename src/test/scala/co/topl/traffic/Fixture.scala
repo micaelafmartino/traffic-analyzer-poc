@@ -61,7 +61,7 @@ trait Fixture {
     )),
   ))
 
-  val intersections = Set(i"A1", i"A2", i"A3", i"B1", i"B2", i"B3")
+  val intersections: Set[Intersection] = Set(i"A1", i"A2", i"A3", i"B1", i"B2", i"B3")
 
   val target: Intersection = i"B2"
 

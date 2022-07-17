@@ -20,8 +20,8 @@ case class TrafficMeasurementsParser(url: String) {
   def roadSegments(): Try[Set[RoadSegment]] = readMeasurements().map(_
     .trafficMeasurements
     .flatMap(_.measurements)
-    .groupBy(_.segment.withoutTime)
-    .map { case ((start, end), measurements) => RoadSegment(avgTransitTime(measurements), start, end) }
+    .groupBy(_.segment.unmeasured)
+    .map { case (segment, measurements) => RoadSegment(avgTransitTime(measurements), segment.start, segment.end) }
     .toSet
   )
 
